@@ -5,15 +5,20 @@ import { PrismaService } from '@/prisma/prisma.service';
 @Injectable()
 export class ProductsService {
 
-  constructor(private readonly prismaService: PrismaService){}
+
+  constructor(private readonly prismaService: PrismaService) { }
   createProduct(body: CreateProductRequest, userId: number) {
-   return this.prismaService.product.create({
-    data: {
-      name: body.name,
-      description: body.description,
-      price: body.price,
-      userId,
-    }
-   })
+    return this.prismaService.product.create({
+      data: {
+        name: body.name,
+        description: body.description,
+        price: body.price,
+        userId,
+      }
+    })
+  }
+
+  async getProducts() {
+    return this.prismaService.product.findMany()
   }
 }
