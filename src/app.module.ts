@@ -28,8 +28,8 @@ import { join } from 'path';
       inject: [ConfigService]
     }),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'public', 'products'),
-      serveRoot: '/products',
+      rootPath: join(__dirname, '..', 'public','images', 'products'),
+      serveRoot: '/images/products',
     }),
     ConfigModule.forRoot(), UsersModule, AuthModule, ProductsModule],
   controllers: [],

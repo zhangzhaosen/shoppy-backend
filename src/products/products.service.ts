@@ -1,8 +1,9 @@
 import { promises as fs } from 'fs'
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductRequest } from './dto/create-product.request';
 import { PrismaService } from '@/prisma/prisma.service';
 import { join } from 'path';
+import { PRODUCT_IMAGES } from './product-images';
 
 @Injectable()
 export class ProductsService {
@@ -30,7 +31,7 @@ export class ProductsService {
     );
   }
   private async imageExists(productId: number) {
-    const imagePath = join(process.cwd(), 'dist', 'public', 'products', `${productId}.png`);
+    const imagePath = join(PRODUCT_IMAGES, `${productId}.png`);
     //console.log(`[Debug] Checking for image at: ${imagePath}`);
 
     try {
@@ -38,8 +39,33 @@ export class ProductsService {
       //console.log(`[Debug] Image found for productId: ${productId}`);
       return true;
     } catch (err) {
-     // console.error(`[Debug] Error accessing image for productId ${productId}:`, err);
+      // console.error(`[Debug] Error accessing image for productId ${productId}:`, err);
       return false;
     }
   }
+
+  async getProduct(productId: number) {
+
+    try {
+
+      const product = await this.prismaService.product.findUniqueOrThrow({
+        where: {
+          id: productId,
+        }
+      })
+
+      const result = {
+        ...product,
+        imageExists: await this.imageExists(productId),
+      }
+
+      return result
+
+    } catch (e) {
+      throw new NotFoundException( `Product not found with id ${productId}`)
+    }
+
+
+  }
+
 }
