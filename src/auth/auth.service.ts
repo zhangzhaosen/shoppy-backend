@@ -47,4 +47,8 @@ export class AuthService {
       throw new UnauthorizedException('Credentials are not valid.');
     }
   }
+
+  verifyToken(jwt:string){
+    return  this.jwtService.verify(jwt)
+  }
 }
