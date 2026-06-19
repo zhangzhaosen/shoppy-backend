@@ -27,7 +27,8 @@ export class ProductsGateway {
     }
     catch (e) {
 
-       throw new WsException('Unauthorized error. Please login first.')
+       //throw new WsException('Unauthorized error. Please login first.')
+       client.disconnect();
     }
   }
 }
