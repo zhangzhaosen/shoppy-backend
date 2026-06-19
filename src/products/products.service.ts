@@ -6,14 +6,20 @@ import { join } from 'path';
 import { PRODUCT_IMAGES } from './product-images';
 import { Prisma } from '@/generated/prisma/client';
 import { ProductsGateway } from './products.gateway';
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 @Injectable()
 export class ProductsService {
 
+  private readonly s3Client = new S3Client({
+    region: 'us-east-1',
+  })
+
+  private readonly bucket = 'canoon-shoppy-products'
 
   constructor(private readonly prismaService: PrismaService, private readonly productsGateway: ProductsGateway) { }
   async createProduct(body: CreateProductRequest, userId: number) {
-    const product = await  this.prismaService.product.create({
+    const product = await this.prismaService.product.create({
       data: {
         name: body.name,
         description: body.description,
@@ -30,8 +36,8 @@ export class ProductsService {
 
   async getProducts(status?: string) {
     const args: Prisma.ProductFindManyArgs = {}
-    if(status === 'availible'){
-      args.where = {sold: false}
+    if (status === 'availible') {
+      args.where = { sold: false }
     }
 
     const products = await this.prismaService.product.findMany(args);
@@ -47,9 +53,15 @@ export class ProductsService {
     //console.log(`[Debug] Checking for image at: ${imagePath}`);
 
     try {
-      await fs.access(imagePath, fs.constants.F_OK);
+     // await fs.access(imagePath, fs.constants.F_OK);
+     const {Body} = await this.s3Client.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: `${productId}.png`,
+      })
+     )
       //console.log(`[Debug] Image found for productId: ${productId}`);
-      return true;
+      return !!Body;
     } catch (err) {
       // console.error(`[Debug] Error accessing image for productId ${productId}:`, err);
       return false;
@@ -74,14 +86,14 @@ export class ProductsService {
       return result
 
     } catch (e) {
-      throw new NotFoundException( `Product not found with id ${productId}`)
+      throw new NotFoundException(`Product not found with id ${productId}`)
     }
 
 
   }
 
   async update(productId: number, data: Prisma.ProductUpdateInput) {
-    const product = await  this.prismaService.product.update({
+    const product = await this.prismaService.product.update({
       where: {
         id: productId,
       },
@@ -91,5 +103,17 @@ export class ProductsService {
     this.productsGateway.handleProductUpdated()
     return product
   }
+
+  async uploadProductImage(productId: string, buffer: Buffer<ArrayBufferLike>) {
+    await this.s3Client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: `${productId}.png`,
+        Body: buffer,
+
+      })
+    )
+  }
+
 
 }
